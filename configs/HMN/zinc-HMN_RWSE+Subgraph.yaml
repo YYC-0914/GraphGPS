@@ -1,0 +1,88 @@
+out_dir: results
+metric_best: mae
+metric_agg: argmin
+wandb:
+  use: True
+  project: ZINC
+dataset:
+  format: PyG-ZINC
+  name: subset_subgraph
+  is_subgraph: True
+  task: graph
+  subgraph_policy: ego_nets_plus
+  subgraph_num_hops: 3
+  task_type: regression
+  transductive: False
+  node_encoder: True
+  node_encoder_name: TypeDictNode+RWSE
+  node_encoder_num_types: 28
+  node_encoder_bn: False
+  edge_encoder: True
+  edge_encoder_name: TypeDictEdge
+  edge_encoder_num_types: 4
+  edge_encoder_bn: False
+# posenc_LapPE:
+#   enable: True
+#   eigen:
+#     laplacian_norm: none
+#     eigvec_norm: L2
+#     max_freqs: 1
+#   model: DeepSet
+#   dim_pe: 8
+#   layers: 2
+#   raw_norm_type: none
+#   need_GIEncoding: True
+#   graph_invariant: ["degree", "pagerank"]
+posenc_RWSE:
+  enable: True
+  kernel:
+    times_func: range(1,21)
+  model: Linear
+  dim_pe: 24
+  raw_norm_type: BatchNorm
+train:
+  mode: custom
+  batch_size: 32   
+  eval_period: 1
+  ckpt_period: 100
+model:
+  type: HSMNModel
+  loss_fun: l1
+  edge_decoding: dot
+  graph_pooling: add
+gnn:
+  head: san_graph
+  HeatConvBlock_n_layers: 1
+  subgraph_encoder:
+    emb_dim: 32
+    use_transpose: False
+    dropout: 0.0
+    residual: False
+    batchnorm: True
+    use_readout: True
+    use_mlp: True
+    subgraph_readout: sum
+    feature_encoder: zinc
+    gnn_type: zincgin
+    num_layers: 1
+  layers_pre_mp: 0
+  layers_block: 5
+  layers_post_mp: 3
+  dim_inner: 84
+  batchnorm: True
+  residual: True
+  sublayer_residual: True
+  num_clusters: 5
+  train_eps: True
+  act: relu
+  dropout: 0.0
+  agg: sum
+  normalize_adj: False
+optim:
+  optimizer: adamW
+  weight_decay: 1e-5
+  base_lr: 0.001
+  max_epoch: 2000
+  scheduler: cosine_with_warmup
+  num_warmup_epochs: 50
+  min_lr: 1e-6
