@@ -59,9 +59,15 @@ done
 cfg_dir="configs/HMN"
 
 DATASET="zinc"
-slurm_directive="--time=0-15:00:00 --mem=16G --gres=gpu:1 --cpus-per-task=4 -p AI4Phys"
+slurm_directive="--time=2-24:00:00 --mem=16G --cpus-per-task=4 -p AI4Phys"
 # run_repeats ${DATASET} HMN_LapPE+RWSE "name_tag 5x5x1_with_dim_96_2000epochs_AdamW_correct.1run"
-run_repeats ${DATASET} HMN_RWSE+Subgraph "name_tag 5x5x1_with_dim_84_2000epochs_subgraph.1run"
+# run_repeats ${DATASET} HMN_RWSE+Subgraph "name_tag 5x5x1_with_dim_84_2000epochs_RWSE+Subgraph.1run"
+
+# run_repeats ${DATASET} HMN_RWSE+RWMask "name_tag 5x5x1_2layersEncoder_with_dim_96_1000epochs_RWSE+RWMask.1run"
+run_repeats ${DATASET} HMN_RWSE+RWMask "name_tag cpu_test_run.1run"
+
+python main.py --cfg configs/HSMN/zinc-HSMN_RWSE+RWMask_50percent.yaml wandb.use False
+
 
 # python main.py --cfg configs/HMN/zinc-HMN_LapPE+RWSE+Subgraph.yaml wandb.use False
 

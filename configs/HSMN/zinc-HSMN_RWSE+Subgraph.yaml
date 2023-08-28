@@ -1,5 +1,5 @@
 out_dir: results
-name_tag: 5x5x1_with_dim_96_2layersEncoder_1000epochs_unnormalized.1run
+name_tag: 3x2x5_with_dim_84_1000epochs.1run
 metric_best: mae
 metric_agg: argmin
 wandb:
@@ -7,28 +7,21 @@ wandb:
   project: ZINC
 dataset:
   format: PyG-ZINC
-  name: subset
+  name: subset_subgraph
+  is_subgraph: True
   task: graph
+  subgraph_policy: ego_nets_plus
+  subgraph_num_hops: 3
   task_type: regression
   transductive: False
   node_encoder: True
-  node_encoder_name: TypeDictNode+LapPE+RWSE
+  node_encoder_name: TypeDictNode+RWSE
   node_encoder_num_types: 28
   node_encoder_bn: False
   edge_encoder: True
   edge_encoder_name: TypeDictEdge
   edge_encoder_num_types: 4
   edge_encoder_bn: False
-posenc_LapPE:
-  enable: True
-  eigen:
-    laplacian_norm: none
-    eigvec_norm: L2
-    max_freqs: 1
-  model: DeepSet
-  dim_pe: 8
-  layers: 2
-  raw_norm_type: none
 posenc_RWSE:
   enable: True
   kernel:
@@ -42,25 +35,29 @@ train:
   eval_period: 1
   ckpt_period: 100
 model:
-  type: HMNModel
+  type: HSMNModel
   loss_fun: l1
   edge_decoding: dot
   graph_pooling: add
 gnn:
   head: san_graph
-  MaskEncoder_type: "Graph_Invariant"
-  GIMaskEncoder_layers: 2
-  GIMaskEncoder_raw_norm_type: none
-  GIMaskEncoder_hidden_dim: 8
-  GIMaskEncoder_graph_invariant: ["degree", "pagerank"]
-  GIMaskEncoder_batch_norm: True 
-  GIMaskEncoder_normalize: False
-  HeatConvBlock_n_layers: 1
-
+  HeatConvBlock_n_layers: 3
+  subgraph_encoder:
+    emb_dim: 32
+    use_transpose: False
+    dropout: 0.0
+    residual: False
+    batchnorm: True
+    use_readout: True
+    use_mlp: True
+    subgraph_readout: sum
+    feature_encoder: zinc
+    gnn_type: zincgin
+    num_layers: 1
   layers_pre_mp: 0
-  layers_block: 5
+  layers_block: 2
   layers_post_mp: 3
-  dim_inner: 96
+  dim_inner: 84
   batchnorm: True
   residual: True
   sublayer_residual: True
@@ -70,15 +67,6 @@ gnn:
   dropout: 0.0
   agg: sum
   normalize_adj: False
-# optim:
-#   optimizer: adam
-#   weight_decay: 0.0
-#   base_lr: 0.001
-#   max_epoch: 2000
-#   scheduler: reduce_on_plateau
-#   reduce_factor: 0.5
-#   schedule_patience: 30
-#   min_lr: 1e-5
 optim:
   optimizer: adamW
   weight_decay: 1e-5

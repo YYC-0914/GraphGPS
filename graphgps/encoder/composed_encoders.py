@@ -43,9 +43,7 @@ def concat_node_encoders(encoder_classes, pe_enc_names):
         enc2_name = None
 
         def __init__(self, dim_emb):
-            super().__init__()
-            # print("Dim embedding: ", dim_emb)
-            
+            super().__init__()            
             if cfg.posenc_EquivStableLapPE.enable or cfg.posenc_VGNMaskEncoder.enable: # Special handling for Equiv_Stable LapPE where node feats and PE are not concat
                 self.encoder1 = self.enc1_cls(dim_emb)
                 self.encoder2 = self.enc2_cls(dim_emb)

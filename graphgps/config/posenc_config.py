@@ -51,9 +51,6 @@ def set_cfg_posenc(cfg):
         # a separate variable in the PyG graph batch object.
         pecfg.pass_as_var = False
         
-        pecfg.batch_norm = True
-        pecfg.need_GIEncoding = True
-        pecfg.graph_invariant = ["degree"]
 
     # Config for EquivStable LapPE
     cfg.posenc_EquivStableLapPE.enable = False

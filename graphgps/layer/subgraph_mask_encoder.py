@@ -341,3 +341,4 @@ class ZincAtomEncoder(torch.nn.Module):
             return torch.hstack((x[:, :self.num_added], self.enc(x[:, self.num_added:].squeeze())))
         else:
             return self.enc(x.squeeze())
+

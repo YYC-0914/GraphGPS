@@ -18,6 +18,8 @@ def custom_gnn_cfg(cfg):
     cfg.gnn.GIMaskEncoder_hidden_dim = 8
     cfg.gnn.GIMaskEncoder_graph_invariant = ["degree", "pagerank"]
     cfg.gnn.GIMaskEncoder_batch_norm = True 
+    cfg.gnn.GIMaskEncoder_normalize = False
+
     cfg.gnn.HeatConvBlock_n_layers = 1
     cfg.gnn.layers_block = 5
     cfg.gnn.subgraph_encoder = CN()
@@ -32,3 +34,12 @@ def custom_gnn_cfg(cfg):
     cfg.gnn.subgraph_encoder.feature_encoder = "zinc"
     cfg.gnn.subgraph_encoder.gnn_type = "zincgin"
     cfg.gnn.subgraph_encoder.num_layers = 4
+
+    cfg.gnn.MaskEncoder_type = "Simple"
+    
+    cfg.gnn.SimpleMaskEncoder_layers = 2
+    cfg.gnn.SimpleMaskEncoder_dim_in = 24
+    cfg.gnn.SimpleMaskEncoder_raw_norm_type = None
+    cfg.gnn.SimpleMaskEncoder_hidden_dim = 32
+    cfg.gnn.SimpleMaskEncoder_batch_norm = True
+    cfg.gnn.SimpleMaskEncoder_pos_stat = "RWSE"

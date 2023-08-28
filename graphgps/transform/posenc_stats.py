@@ -10,7 +10,7 @@ from torch_geometric.utils.num_nodes import maybe_num_nodes
 from graphgps.encoder.graphormer_encoder import graphormer_pre_processing
 from graphgps.transform.util import get_graph_encoding
 from torch_geometric.utils import to_networkx
-
+# import pdb; pdb.set_trace()
 
 def compute_posenc_stats(data, pe_types, is_undirected, cfg):
     """Precompute positional encodings for the given graph.
@@ -61,11 +61,16 @@ def compute_posenc_stats(data, pe_types, is_undirected, cfg):
         graph_invariant = cfg.posenc_GIMaskEncoder.graph_invariant
         graph_encoding = get_graph_encoding(to_networkx(data), graph_invariant)
         data.encoding = graph_encoding.float()
-
-    if 'LapPE' in pe_types and cfg.posenc_LapPE.need_GIEncoding:
-        graph_invariant = cfg.posenc_LapPE.graph_invariant
+        
+    if cfg.gnn.MaskEncoder_type == "Graph_Invariant":
+        graph_invariant = cfg.gnn.GIMaskEncoder_graph_invariant
         graph_encoding = get_graph_encoding(to_networkx(data), graph_invariant)
-        data.encoding = graph_encoding.float()
+        # breakpoint()
+        # print("Graph Encoding: ", graph_encoding.shape)
+        if cfg.gnn.GIMaskEncoder_normalize:
+            data.encoding = torch.nn.functional.normalize(graph_encoding.float(), p=1, dim=0)
+        else:
+            data.encoding = graph_encoding.float()
         
 
 
@@ -134,6 +139,8 @@ def compute_posenc_stats(data, pe_types, is_undirected, cfg):
                                           edge_index=data.edge_index,
                                           num_nodes=N)
         data.pestat_RWSE = rw_landing
+        if cfg.gnn.MaskEncoder_type == "Simple" and cfg.gnn.SimpleMaskEncoder_pos_stat == "RWSE":
+            data.encoding = rw_landing
 
 
     if 'RWSEMaskEncoder' in pe_types:

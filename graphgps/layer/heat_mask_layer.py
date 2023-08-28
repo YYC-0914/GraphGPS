@@ -12,6 +12,15 @@ from torch_geometric.nn import Linear as Linear_pyg
 class HeatConvBlock(nn.Module):
     def __init__(self, dim_in, dim_out, n_layers):
         super().__init__()
+        MaskEncoder_type = cfg.gnn.MaskEncoder_type
+        if MaskEncoder_type not in ["Graph_Invariant", "Simple"]:
+            raise ValueError("HMN MaskEncoder type not found")
+        if MaskEncoder_type == "Graph_Invariant":
+            print("HeatConvBlock using GIMaskEncoder")
+            MaskEncoderLayer = GIMaskEncoderLayer
+        elif MaskEncoder_type == "Simple":
+            print("HeatConvBlock using SimpleMaskEncoder")
+            MaskEncoderLayer = SimpleMaskEncoderLayer
         self.mask_encoder = MaskEncoderLayer()
         self.layers = nn.ModuleList()
         self.bns = nn.ModuleList()
@@ -48,7 +57,7 @@ class HeatConvBlock(nn.Module):
         return batch
                 
 
-class MaskEncoderLayer(nn.Module):
+class GIMaskEncoderLayer(nn.Module):
     def __init__(self):
         super().__init__()
         n_layers = cfg.gnn.GIMaskEncoder_layers
@@ -75,7 +84,7 @@ class MaskEncoderLayer(nn.Module):
             self.model.append(nn.Linear(dim_in, hidden_dim))
             self.bn.append(nn.BatchNorm1d(hidden_dim))
             for _ in range(n_layers - 2):
-                self.model.append(nn.Linear(dim_in, hidden_dim))
+                self.model.append(nn.Linear(hidden_dim, hidden_dim))
                 self.bn.append(nn.BatchNorm1d(hidden_dim))
             self.model.append(nn.Linear(hidden_dim, num_clusters))
             self.bn.append(nn.BatchNorm1d(num_clusters))
@@ -102,7 +111,60 @@ class MaskEncoderLayer(nn.Module):
         device =batch.x.device
         batch.complement_masks = torch.ones(masks.shape).to(device) - masks
         return batch
+    
+class SimpleMaskEncoderLayer(nn.Module):
+    def __init__(self):
+        super().__init__()
+        n_layers = cfg.gnn.SimpleMaskEncoder_layers
+        num_clusters = cfg.gnn.num_clusters
+        dim_in = cfg.gnn.SimpleMaskEncoder_dim_in
+        hidden_dim = cfg.gnn.SimpleMaskEncoder_hidden_dim
+        norm_type = cfg.gnn.SimpleMaskEncoder_raw_norm_type
+        self.batch_norm = cfg.gnn.SimpleMaskEncoder_batch_norm
+        self.n_layers = n_layers
 
+
+        if norm_type == 'batchnorm':
+            self.raw_norm = nn.BatchNorm1d(hidden_dim)
+        else:
+            self.raw_norm = None
+
+        self.bn = nn.ModuleList()
+        self.model = nn.ModuleList()
+        if n_layers == 1:
+            self.model.append(nn.Linear(dim_in, num_clusters))
+            self.bn.append(nn.BatchNorm1d(num_clusters))
+        else:
+            self.model.append(nn.Linear(dim_in, hidden_dim))
+            self.bn.append(nn.BatchNorm1d(hidden_dim))
+            for _ in range(n_layers - 2):
+                self.model.append(nn.Linear(hidden_dim, hidden_dim))
+                self.bn.append(nn.BatchNorm1d(hidden_dim))
+            self.model.append(nn.Linear(hidden_dim, num_clusters))
+            self.bn.append(nn.BatchNorm1d(num_clusters))
+
+    def forward(self, batch, cur_layer):
+        if not (hasattr(batch, 'encoding')):
+            raise ValueError("Precomputed graph-invariant encoding is "
+                f"required for {self.__class__.__name__}; "
+                "set config 'posenc_GIMaskEncoder.enable' to True")
+        encoding = batch.encoding
+        if self.raw_norm:
+            encoding = self.raw_norm(encoding)
+        for i in range(self.n_layers):
+            encoding = self.model[i](encoding)
+            if self.batch_norm:
+                encoding = self.bn[i](encoding)
+        # encoding = self.encoder(encoding)
+            encoding = F.relu(encoding)
+        raw_masks = F.softmax(encoding, dim=-1)
+        masks = torch.transpose(raw_masks, 0, 1)
+        cur_mask = "masks_" + str(cur_layer)
+        # if not (hasattr(batch, cur_mask)):
+        setattr(batch, cur_mask, masks)
+        device =batch.x.device
+        batch.complement_masks = torch.ones(masks.shape).to(device) - masks
+        return batch
 
 
 class HeatConvLayer(nn.Module):
